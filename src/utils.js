@@ -16,6 +16,11 @@ const PIVOT_X = W / 2;                    // tower pivot (world)
 const PIVOT_Y = CONFIG.foundation.height; // top-center of the foundation
 const GO_BUTTON = { x: 90, y: 404, w: 180, h: 52 };
 const GO_CITY_BUTTON = { x: 105, y: 466, w: 150, h: 40 };
+const GO_SHARE_WIDE = { x: 105, y: 516, w: 150, h: 42 };   // image only
+const GO_SHARE_BUTTON = { x: 56, y: 516, w: 120, h: 42 };   // image, next to video
+const GO_VIDEO_BUTTON = { x: 184, y: 516, w: 120, h: 42 };
+const VIDEO_MAIN_BUTTON = { x: 90, y: 512, w: 180, h: 48 };  // video overlay: share / cancel
+const VIDEO_CLOSE_BUTTON = { x: 120, y: 572, w: 120, h: 40 };
 const MENU_CITY_BUTTON = { x: 115, y: 520, w: 130, h: 42 };
 const SOUND_BUTTON = { x: 322, y: 8, w: 30, h: 30 };
 

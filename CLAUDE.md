@@ -27,6 +27,7 @@ Oyunun farkı: kayık oturan katın taşan kısmı **kesilip düşmez**. Kat old
   src/crane.js     vinç: sarkaç hareketi, bırakma, vinç çizimi
   src/tower.js     katlar, eğim, salınım, yerleşme, yıkılma, deprem
   src/city.js      mahalle (Aşama 6): kayıt, kentsel dönüşüm, unvanlar, kozmetikler, mahalle ekranı
+  src/share.js     paylaşım (Aşama 7): paylaşım görseli, Web Share / indirme, durum kaydı, yıkılma videosu
   src/main.js      oyun durumu, akış, giriş, oyun döngüsü
   manifest.webmanifest   PWA manifesti (Aşama 4)
   sw.js                  service worker, çevrimdışı önbellek (Aşama 4)
@@ -165,6 +166,16 @@ Aşama 5'te eklendi:
 - **Kozmetikler** (`CONFIG.cosmetics`): vinç rengi (Sarı, Kırmızı, Turkuaz, Mor) ve apartman kat paleti (Klasik, Pastel, Boğaz). Mahalle ekranındaki "Görünüm" butonundan seçilir, seçim `CONFIG.storage.look`'ta saklanır. İkaz şeritleri her zaman sarıdır (`colors.hazard`). **Oyun mekaniğine hiçbir etkisi yoktur.**
 - Mahalle ekranı: sağa sola kaydırılan sokak, binaya dokununca bilgi kartı (kat, puan, tarih, kiracılar, Rekor / Korunuyor etiketi), yeni bina yükselme animasyonu ve "Kentsel dönüşüm!" / "Yeni unvan" bildirimleri. Menüde "Mahallem", oyun sonunda "Mahalleye bak" butonu.
 
+## 8d. Paylaşım (Aşama 7)
+
+- **Görsel:** oyun sonunda (en az 1 kat) 1080×1920 (9:16) PNG: oyunun adı, bitiş sebebi, kulenin zirvedeki hali (`endGame` anındaki anlık görüntü, kule henüz ayakta), kat sayısı, puan, "Yeni rekor!" etiketi, kiracı özeti ve adres `cagriakdeniz34.github.io/apartman-kulesi`. 18 kata kadar kulenin tamamı, daha yüksekte üstteki 12 kat yakın plan + yanda "tam boy" silueti. Görsel panel açılınca önceden üretilir.
+- **Paylaşım:** "Paylaş" butonu Web Share API ile telefonun paylaşım menüsünü açar; `navigator.canShare({files})` desteklemiyorsa ya da paylaşım hata verirse dosya indirilir ("Görsel indirildi"). Kullanıcı iptal ederse bir şey olmaz.
+- **Kullanıcı etkileşimi kuralı:** `navigator.share()` yalnızca dokunuş bırakılınca çalışır. Paylaşım butonları ve video ekranı `touchend` (dokunmatik) / `pointerup` (fare) ile tepki verir, `pointerdown` ile değil.
+- **Video sadece kule yıkılınca** sunulur (canlar bitince yalnızca görsel). Oyun sırasında piksel kaydedilmez: `Replay` son ~2,5 sn'nin durumunu (kamera, açılar, hareketli katlar, parçacıklar, ses olayları) saniyede 30 örnekle tutar; yıkılmadan sonra 3 sn daha, ağır çekim kısmı için 60 örnekle. "Video"ya basınca bu kayıt ekran dışı 720×1280 canvas'ta normal çizim fonksiyonlarıyla yeniden oynatılır ve `MediaRecorder` ile kaydedilir (~8,5 sn: yıkılmadan 2,2 sn önce, 0,5× ağır çekim devrilme, "Kule Yıkıldı!" yazısı, sonda 1,8 sn paylaşım görseli; altta adres şeridi). Kayıt sırasında önizleme, ilerleme çubuğu ve "İptal" görünür.
+- **Ses:** oyun sesleri `MediaStreamDestination` ile videoya eklenir; ses kapalıysa video sessizdir.
+- **Destek:** video butonu yalnızca `MediaRecorder`, `canvas.captureStream` ve desteklenen bir format (önce MP4/H.264, yoksa WebM) varsa görünür. Kayıt bozuk/boş çıkarsa (`minBytes`, süre < 1 sn) `CONFIG.storage.videoFail` yazılır ve o cihazda video butonu bir daha gösterilmez. Kaydın başında kodlayıcı ısınana kadar atılan bir ön kayıt yapılır (ilk kayıtta kare kaybını önler).
+- Ayarlar `CONFIG.share`, metinler `TEXT` içinde. Kayıt sırasında `ctx`/`view`/önbellekler geçici olarak kayıt canvas'ına yönlendirilir ve her karede geri alınır; pencere boyutu değişirse kayıt bitince uygulanır.
+
 ## 8b. PWA (Aşama 4)
 
 - `manifest.webmanifest`: ad "Apartman Kulesi", `display: standalone` (çentik/kamera deliği arayüzü örtmesin diye tam ekran değil), dikey yön, göreli yollar (`./`). Böylece site bir alt klasörde (ör. GitHub Pages) de çalışır.
@@ -216,5 +227,5 @@ Eski "sonraya bırakılan fikirler" listesi bu sırayla aşamalara dönüştür�
 
 5. **Aşama 5 — Sakinler + İstanbul teması** *(yapıldı, bkz. 6 ve 7)*: katlara kiracılar taşınır; iyi oturan kat daha "kaliteli" kiracı çeker (pencerelerde ışık, balkonda çamaşır, kedi, çiçek kiracı tipine göre değişir). Arka plan İstanbul silueti (kubbeler, minareler, Galata benzeri kule, boğaz ve köprü; esinlenme, birebir kopya değil). Alt katlar gecekondu, yükseldikçe apartman, en üstte modern gökdelen. "Kaçak kat" mizahı.
 6. **Aşama 6 — Şehir meta oyunu** *(yapıldı, bkz. 8c)*: her oyundaki bina bir mahalleye eklenir.
-7. **Aşama 7 — Paylaşılabilir yıkılma görüntüsü:** oyun sonunda kısa yıkılma tekrarı (TikTok / Reels için).
+7. **Aşama 7 — Paylaşılabilir yıkılma görüntüsü** *(yapıldı, bkz. 8d)*: oyun sonu paylaşım görseli ve kısa yıkılma videosu (TikTok / Reels için).
 8. **Aşama 8 — Günlük meydan okuma:** herkes aynı rüzgâr düzeniyle oynar, günlük liderlik tablosu.

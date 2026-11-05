@@ -73,6 +73,7 @@ function resetWorld() {
 
 function startGame() {
   resetWorld();
+  Share.onGameStart();
   game.state = State.PLAYING;
   if (!game.crane.block) requestSpawn(0.15);
 }
@@ -92,6 +93,7 @@ function endGame(reason, delay) {
   game.over.reason = reason;
   game.over.timer = -delay; // overlay appears when timer reaches 0
   recordBuilding();          // the tower is still standing here
+  Share.onGameEnd(reason);   // share picture snapshot / replay marker
   if (game.score > game.best) {
     game.best = game.score;
     game.newRecord = true;
@@ -188,12 +190,14 @@ function step(dt) {
   updateCamera(dt);
   if (game.state === State.GAME_OVER) game.over.timer += dt;
   if (game.state === State.CITY) updateCity(dt);
+  Replay.tick(dt);
 }
 
 // =====================================================================
 // Input
 // =====================================================================
 function handlePress(x, y, fromKey) {
+  if (Share.ui) return; // the video overlay reacts on release (shareTap)
   if (game.paused) { game.paused = false; Sound.resume(); return; }
   if (!fromKey && inRect(x, y, SOUND_BUTTON)) { Sound.toggleMute(); return; }
   switch (game.state) {
@@ -206,6 +210,7 @@ function handlePress(x, y, fromKey) {
       break;
     case State.GAME_OVER:
       if (game.over.timer < CONFIG.ui.gameOverInputDelay) return;
+      if (!fromKey && Share.hit(x, y)) return; // share buttons act on release (shareTap)
       if (fromKey || inRect(x, y, GO_BUTTON)) startGame();
       else if (inRect(x, y, GO_CITY_BUTTON)) enterCity(game.cityEvent);
       break;
@@ -235,6 +240,25 @@ canvas.addEventListener('pointerup', (e) => {
   const p = clientToLogical(e.clientX, e.clientY);
   cityPointerUp(p.x, p.y, false);
 });
+// Share buttons and the video overlay: navigator.share() needs a user-activation
+// event, so they react on release. Touch uses touchend (counts on iOS and Android),
+// mouse/pen use pointerup.
+function shareTap(clientX, clientY) {
+  const p = clientToLogical(clientX, clientY);
+  if (Share.ui) { Share.overlayTap(p.x, p.y); return; }
+  if (game.state !== State.GAME_OVER || game.paused || game.over.timer < CONFIG.ui.gameOverInputDelay) return;
+  const h = Share.hit(p.x, p.y);
+  if (h === 'image') Share.shareImage();
+  else if (h === 'video') Share.startVideo();
+}
+canvas.addEventListener('pointerup', (e) => {
+  if (e.pointerType === 'touch' || (e.button !== undefined && e.button > 0)) return;
+  shareTap(e.clientX, e.clientY);
+});
+canvas.addEventListener('touchend', (e) => {
+  const t = e.changedTouches && e.changedTouches[0];
+  if (t) shareTap(t.clientX, t.clientY);
+}, { passive: true });
 canvas.addEventListener('pointercancel', () => { if (game.state === State.CITY) cityPointerUp(0, 0, true); });
 canvas.addEventListener('wheel', (e) => {
   if (game.state !== State.CITY) return;
@@ -249,6 +273,11 @@ const unlockAudio = () => Sound.unlock();
   window.addEventListener(type, unlockAudio, { capture: true, passive: true }));
 
 window.addEventListener('keydown', (e) => {
+  if (Share.ui) {
+    if (e.code === 'Escape') { if (Share.recording) Share.cancelVideo(); else Share.closeOverlay(); }
+    e.preventDefault();
+    return;
+  }
   if (game.state === State.CITY && !game.paused && ['Escape', 'Backspace', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
     e.preventDefault();
     cityKey(e.code);
@@ -278,6 +307,7 @@ let accumulator = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     if (game.state === State.PLAYING) game.paused = true;
+    if (Share.recording) Share.cancelVideo(); // rAF stops while hidden
     Sound.suspend();
   } else {
     lastTime = performance.now();
@@ -301,11 +331,16 @@ function frame(now) {
       accumulator -= stepDt;
     }
   }
-  render();
+  Share.update(dt);
+  if (Share.ui) Share.renderUI();
+  else render();
   requestAnimationFrame(frame);
 }
 
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => {
+  if (Share.rec) Share.resizePending = true; // the video renders with its own view; resize afterwards
+  else resize();
+});
 resetQuake();
 City.load();
 loadLook();

@@ -206,6 +206,35 @@ const CONFIG = {
     muted: 'apartmanKulesi.muted',
     city: 'apartmanKulesi.city',   // neighborhood (stage 6), JSON
     look: 'apartmanKulesi.look',   // chosen cosmetics, JSON
+    videoFail: 'apartmanKulesi.videoFail', // '1' once video recording failed on this device
+  },
+  // Sharing (stage 7): a 9:16 picture of the tower at its peak, and a short
+  // collapse video re-rendered from a cheap state log (never recorded live).
+  share: {
+    minFloors: 1,                 // no share button for an empty tower
+    url: 'cagriakdeniz34.github.io/apartman-kulesi',
+    fileName: 'apartman-kulesi',
+    card: {
+      scale: 3,                   // 360x640 logical -> 1080x1920 px
+      fullMaxFloors: 18,          // taller towers: top floors close up + full-height inset
+      cropFloors: 12,
+      prepareAt: 0.3,             // game-over overlay time when the picture is pre-rendered
+    },
+    video: {
+      width: 720,
+      height: 1280,
+      fps: 30,
+      bitrate: 4000000,
+      sampleRate: 30,             // state samples per second while playing
+      slowSampleRate: 60,         // ...and during the slow-motion part
+      preRoll: 2.2,               // seconds before the collapse
+      postRoll: 3.0,              // seconds after the collapse starts
+      slowLen: 1.4,               // slow motion from the collapse start
+      slowSpeed: 0.5,
+      titleAt: 1.1,               // "Kule Yıkıldı!" appears this long after the collapse starts
+      endCard: 1.8,               // the share picture at the end
+      minBytes: 10000,            // smaller files are treated as a failed recording
+    },
   },
   // Neighborhood meta game (stage 6). Purely cosmetic: no effect on gameplay.
   city: {
@@ -328,6 +357,8 @@ const CONFIG = {
     trunk: '#7A5638',
     lamp: '#3F4350',
     button2: '#3D85C6',
+    button3: '#81B29A',
+    videoBg: '#1B1D2E',
     locked: '#B9B4A8',
   },
 };
@@ -380,5 +411,17 @@ const TEXT = {
   recordTag: 'Rekor',
   tenantNames: { teyze: 'teyze', family: 'aile', student: 'öğrenci', elite: 'seçkin' },
   months: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
-  lockHint: 'Kilitli olanlar mahalle unvanıyla açılır'
+  lockHint: 'Kilitli olanlar mahalle unvanıyla açılır',
+  share: 'Paylaş',
+  video: 'Video',
+  videoMaking: 'Video hazırlanıyor…',
+  videoReady: 'Video hazır!',
+  shareVideo: 'Videoyu paylaş',
+  cancel: 'İptal',
+  videoFailed: 'Video oluşturulamadı',
+  videoFailedHint: 'Bu cihazda görsel paylaşabilirsin.',
+  imageSaved: 'Görsel indirildi',
+  videoSaved: 'Video indirildi',
+  fullHeight: 'tam boy',
+  shareText: (f) => `Apartman Kulesi'nde ${f} katlık kule diktim!`,
 };

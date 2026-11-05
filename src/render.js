@@ -4,7 +4,8 @@
 // Rendering: canvas scaling, caches, facades, background, HUD, screens
 // =====================================================================
 const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const mainCtx = canvas.getContext('2d');
+let ctx = mainCtx; // redirected to an offscreen canvas while the share video renders
 const view = { dpr: 1, scale: 1, offX: 0, offY: 0, x0: 0, x1: W, y0: 0, y1: H, version: 0 };
 const caches = { skyline: [], clouds: [], stars: null, crane: null, craneH: 0, mast: null, mastTileW: 0, mastTileH: 0 };
 
@@ -1150,11 +1151,12 @@ function nightFactor() {
 function drawSky() {
   const s = skyState(game.skyAlt);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  const cv = ctx.canvas;
+  const g = ctx.createLinearGradient(0, 0, 0, cv.height);
   g.addColorStop(0, s.top);
   g.addColorStop(1, s.bottom);
   ctx.fillStyle = g;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, cv.width, cv.height);
   return s;
 }
 
@@ -1449,7 +1451,8 @@ function drawGameOver() {
   ctx.globalAlpha = Math.min(1, game.over.timer / 0.25);
   dimScreen();
 
-  roundRectPath(ctx, 40, 160, 280, 362, 18);
+  const shareRow = Share.canShareImage();
+  roundRectPath(ctx, 40, 160, 280, shareRow ? 410 : 362, 18);
   ctx.fillStyle = col.panel;
   ctx.fill();
   ctx.lineWidth = 2;
@@ -1492,6 +1495,22 @@ function drawGameOver() {
   ctx.font = font(20);
   ctx.fillText(TEXT.playAgain, W / 2, b.y + b.h / 2 + 1);
   cityButton(GO_CITY_BUTTON, TEXT.seeCity, col.button2);
+  if (shareRow) {
+    if (Share.canShareVideo()) {
+      cityButton(GO_SHARE_BUTTON, TEXT.share, col.button3);
+      cityButton(GO_VIDEO_BUTTON, '   ' + TEXT.video, col.ink);
+      const b2 = GO_VIDEO_BUTTON, cx = b2.x + 34, cy = b2.y + b2.h / 2;
+      ctx.fillStyle = col.buttonText;
+      ctx.beginPath();
+      ctx.moveTo(cx - 5, cy - 7);
+      ctx.lineTo(cx + 7, cy);
+      ctx.lineTo(cx - 5, cy + 7);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      cityButton(GO_SHARE_WIDE, TEXT.share, col.button3);
+    }
+  }
   ctx.globalAlpha = 1;
 }
 
@@ -1541,7 +1560,7 @@ function render() {
   if (game.state === State.MENU) drawMenu();
   else {
     drawHUD(fg, outline);
-    if (game.state === State.GAME_OVER) drawGameOver();
+    if (game.state === State.GAME_OVER) { drawGameOver(); Share.drawToast(); }
   }
   drawSoundButton(fg, outline);
   if (game.paused) drawPaused();
