@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#BFE3F5">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Apartman Kulesi">
+<meta name="description" content="Kat kat apartman diz, kuleyi devirmeden en yükseğe çık.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Apartman Kulesi</title>
 <style>
   html, body {
@@ -48,5 +53,13 @@
 <script src="src/crane.js"></script>
 <script src="src/tower.js"></script>
 <script src="src/main.js"></script>
+<script>
+  // PWA: offline support. Service workers need http(s); skipped when opened from disk (file://).
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>

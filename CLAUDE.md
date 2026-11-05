@@ -27,6 +27,9 @@ Oyunun farkı: kayık oturan katın taşan kısmı **kesilip düşmez**. Kat old
   src/crane.js     vinç: sarkaç hareketi, bırakma, vinç çizimi
   src/tower.js     katlar, eğim, salınım, yerleşme, yıkılma, deprem
   src/main.js      oyun durumu, akış, giriş, oyun döngüsü
+  manifest.webmanifest   PWA manifesti (Aşama 4)
+  sw.js                  service worker, çevrimdışı önbellek (Aşama 4)
+  icons/                 uygulama ikonları (PNG, kodla üretildi)
   ```
 - **ES module kullanılmaz.** Klasik `<script>` etiketleri, yukarıdaki sırayla yüklenir ve ortak global kapsamı paylaşır; böylece `index.html` çift tıklanınca (`file://`) da çalışır. Yükleme sırası önemlidir.
 - Kat yerleşme kuralı (farklı genişlikteki katlar için): yeni katın merkezi alttaki katın üstündeyse (`|offset| <= alttaki kat genişliği / 2`) oturur. Eğim formülündeki `blockWidth` her zaman standart kat genişliğidir.
@@ -146,6 +149,14 @@ Aşama 3'te eklendi:
 - Mobil: AudioContext yalnızca "kullanıcı etkileşimi" sayılan olaylarda açılabilir/devam ettirilebilir: `pointerup`, `touchend`, `click`, `keydown` (dokunmatikte `pointerdown`/`touchstart` sayılmaz). İlk açılışta sessiz 1 örneklik buffer çalınır. iOS sessiz modu için `navigator.audioSession.type = 'playback'`, yoksa döngüdeki sessiz `<audio>` öğesi kullanılır. Sekme geri gelince context tekrar `resume()` edilir.
 - Ses telefonda test edildi ve çalışıyor (AudioContext "running"); geçici durum yazısı kaldırıldı.
 
+## 8b. PWA (Aşama 4)
+
+- `manifest.webmanifest`: ad "Apartman Kulesi", `display: standalone` (çentik/kamera deliği arayüzü örtmesin diye tam ekran değil), dikey yön, göreli yollar (`./`). Böylece site bir alt klasörde (ör. GitHub Pages) de çalışır.
+- `sw.js`: kurulumda tüm oyun dosyalarını önbelleğe alır, sonra önce önbellekten sunar (cache-first). İlk ziyaretten sonra çevrimdışı çalışır.
+- **Dosyalardan biri değiştiğinde `sw.js` içindeki `CACHE_VERSION` artırılmalı** (`v1` → `v2` …). Yoksa kurulu oyuncular eski sürümü görmeye devam eder. Yeni dosya eklenirse `ASSETS` listesine de yazılmalı.
+- Service worker yalnızca `http(s)` üzerinde kaydedilir; `file://` ile açınca oyun yine çalışır, sadece çevrimdışı önbellek olmaz. Çevrimdışı mod HTTPS ister (yerel ağdaki `http://192.168…` adresinde etkin olmaz, `localhost`'ta olur).
+- iOS: manifest ikonu yerine `apple-touch-icon` kullanılır; ana ekrana ekleme Safari → Paylaş → "Ana Ekrana Ekle" ile yapılır.
+
 ## 9. Ekranlar ve akış
 
 Durum makinesi: `MENU → PLAYING → GAME_OVER → (yeniden) PLAYING`
@@ -168,7 +179,7 @@ Her aşama bitince bana kısa bir özet ver ve bir sonraki aşamaya geçmeden on
 1. **Aşama 1 — Çekirdek prototip:** vinç ve sarkaç, bırakma, oturma, eğim, yıkılma, ıskalama ve canlar, kamera, puan, oyun sonu ve yeniden başlatma. Düz renkli basit görseller.
 2. **Aşama 2 — His ve cila:** mükemmel ve combo efektleri, sesler, yıkılma animasyonu, menü ekranı, en yüksek puan, zorluk tablosunun tamamı.
 3. **Aşama 3 — İçerik:** farklı kat şekilleri, deprem olayı, gece teması, dosyaların `src/` yapısına bölünmesi.
-4. **Aşama 4 — Mobil paket:** PWA (ana ekrana ekleme, çevrimdışı çalışma), gerekirse Capacitor ile Android paketi.
+4. **Aşama 4 — Mobil paket:** PWA (ana ekrana ekleme, çevrimdışı çalışma), gerekirse Capacitor ile Android paketi. *(PWA kısmı yapıldı, bkz. 8b; Capacitor henüz yapılmadı.)*
 
 ## 12. Kabul kontrol listesi (Aşama 1)
 
