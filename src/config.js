@@ -201,7 +201,51 @@ const CONFIG = {
   audio: {
     volume: 0.6,
   },
-  storage: { best: 'apartmanKulesi.best', muted: 'apartmanKulesi.muted' },
+  storage: {
+    best: 'apartmanKulesi.best',
+    muted: 'apartmanKulesi.muted',
+    city: 'apartmanKulesi.city',   // neighborhood (stage 6), JSON
+    look: 'apartmanKulesi.look',   // chosen cosmetics, JSON
+  },
+  // Neighborhood meta game (stage 6). Purely cosmetic: no effect on gameplay.
+  city: {
+    minFloors: 5,                 // shorter games do not become buildings
+    maxBuildings: 40,             // above this, kentsel dönüşüm demolishes the shortest
+    protectTallest: 3,            // the 3 tallest + the record building are never demolished
+    landmarkWidth: 64,
+    lotWidth: 48,
+    buildingWidth: 34,
+    groundY: 548,                 // sidewalk top (screen)
+    topY: 205,                    // the tallest building reaches up to here
+    maxFloorH: 10,
+    minFloorH: 1,
+    windowMinFloorH: 4,           // below this, floors are drawn as plain bands
+    friction: 5,                  // scroll inertia decay (1/s)
+    tapSlop: 8,                   // finger movement still counted as a tap
+    riseTime: 1.2,                // new building rising animation
+    // Titles by total floors ever built; each unlocks one cosmetic and a landmark
+    titles: [
+      { floors: 0, name: 'Gecekondu mahallesi' },
+      { floors: 60, name: 'Mahalle', unlock: 'crane:red', landmark: 'cay' },
+      { floors: 150, name: 'Semt', unlock: 'palette:pastel', landmark: 'park' },
+      { floors: 300, name: 'İlçe', unlock: 'crane:turquoise', landmark: 'metro' },
+      { floors: 550, name: 'Şehir', unlock: 'palette:bogaz', landmark: 'cami' },
+      { floors: 1000, name: 'Metropol', unlock: 'crane:purple', landmark: 'saat' },
+    ],
+  },
+  cosmetics: {
+    crane: [
+      { id: 'classic', name: 'Sarı', yellow: '#F2B705', light: '#FFD84D', highlight: '#FFEBA3', shadow: '#A87A06' },
+      { id: 'red', name: 'Kırmızı', yellow: '#D9452B', light: '#F06A4E', highlight: '#F7A08E', shadow: '#8E2A1A' },
+      { id: 'turquoise', name: 'Turkuaz', yellow: '#1FA6A0', light: '#3CC7C0', highlight: '#9EE6E1', shadow: '#12706B' },
+      { id: 'purple', name: 'Mor', yellow: '#7B4FA8', light: '#9C74C9', highlight: '#D6C2EE', shadow: '#4B2D6B' },
+    ],
+    palette: [
+      { id: 'classic', name: 'Klasik', colors: ['#E07A5F', '#F2CC8F', '#81B29A', '#3D85C6', '#F4A261'] },
+      { id: 'pastel', name: 'Pastel', colors: ['#F4B6A6', '#F7E1AE', '#B8DCC4', '#A9C8E8', '#F6C9A0'] },
+      { id: 'bogaz', name: 'Boğaz', colors: ['#2F6F8F', '#5FA3B8', '#E9D8A6', '#94D2BD', '#EE9B00'] },
+    ],
+  },
   ui: {
     gameOverInputDelay: 0.4,
     font: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
@@ -246,6 +290,7 @@ const CONFIG = {
     slab: '#E4DED0',
     tile: '#B5523B',
     tileDark: '#8E3B2A',
+    hazard: '#F2B705',            // warning stripes (stay yellow whatever the crane color)
     craneYellow: '#F2B705',
     craneLight: '#FFD84D',
     craneHighlight: '#FFEBA3',
@@ -274,6 +319,16 @@ const CONFIG = {
     buttonText: '#FFFFFF',
     record: '#81B29A',
     quake: '#C8553D',
+    road: '#5A5F6B',
+    roadLine: '#E9E4D6',
+    sidewalk: '#CFC8B8',
+    curb: '#A69F8F',
+    tree: '#6FA36A',
+    treeDark: '#4E7F4B',
+    trunk: '#7A5638',
+    lamp: '#3F4350',
+    button2: '#3D85C6',
+    locked: '#B9B4A8',
   },
 };
 
@@ -301,4 +356,29 @@ const TEXT = {
   playAgain: 'Tekrar Oyna',
   paused: 'Duraklatıldı',
   tapToResume: 'Devam etmek için dokun',
+  myCity: 'Mahallem',
+  seeCity: 'Mahalleye bak',
+  back: 'Geri',
+  looks: 'Görünüm',
+  close: 'Kapat',
+  craneColor: 'Vinç rengi',
+  blockPalette: 'Kat renkleri',
+  newBuilding: 'Yeni bina!',
+  renewal: 'Kentsel dönüşüm!',
+  renewalLine: (f) => `${f} katlık bina yıkıldı`,
+  newTitle: (t) => `Yeni unvan: ${t}!`,
+  unlocked: (n) => `${n} açıldı`,
+  emptyCity: 'Henüz bina yok.',
+  emptyCityHint: '5 kat ve üstü kuleler buraya eklenir.',
+  cityStats: (b, f) => `${b} bina · toplam ${f} kat`,
+  nextTitle: (t, f) => `${t} için ${f} kat`,
+  maxTitle: 'En yüksek unvan',
+  floorsShort: 'kat',
+  collapsed: 'Yıkıldı',
+  livesOut: 'Canlar bitti',
+  protectedTag: 'Korunuyor',
+  recordTag: 'Rekor',
+  tenantNames: { teyze: 'teyze', family: 'aile', student: 'öğrenci', elite: 'seçkin' },
+  months: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
+  lockHint: 'Kilitli olanlar mahalle unvanıyla açılır'
 };

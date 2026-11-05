@@ -66,7 +66,7 @@ function hazardRect(g, x, y, w, h, stripe) {
   g.beginPath();
   g.rect(x, y, w, h);
   g.clip();
-  g.fillStyle = CONFIG.colors.craneYellow;
+  g.fillStyle = CONFIG.colors.hazard;
   g.fillRect(x, y, w, h);
   g.fillStyle = CONFIG.colors.hazardDark;
   for (let s = x - h; s < x + w + h; s += stripe * 2) {
@@ -1440,6 +1440,7 @@ function drawMenu() {
   ctx.font = font(18);
   outlinedText(TEXT.tapToStart, W / 2, 418, col.ink, col.light, 5);
   ctx.globalAlpha = 1;
+  cityButton(MENU_CITY_BUTTON, TEXT.myCity, col.button2);
 }
 
 function drawGameOver() {
@@ -1448,7 +1449,7 @@ function drawGameOver() {
   ctx.globalAlpha = Math.min(1, game.over.timer / 0.25);
   dimScreen();
 
-  roundRectPath(ctx, 40, 160, 280, 320, 18);
+  roundRectPath(ctx, 40, 160, 280, 362, 18);
   ctx.fillStyle = col.panel;
   ctx.fill();
   ctx.lineWidth = 2;
@@ -1490,6 +1491,7 @@ function drawGameOver() {
   ctx.fillStyle = col.buttonText;
   ctx.font = font(20);
   ctx.fillText(TEXT.playAgain, W / 2, b.y + b.h / 2 + 1);
+  cityButton(GO_CITY_BUTTON, TEXT.seeCity, col.button2);
   ctx.globalAlpha = 1;
 }
 
@@ -1505,6 +1507,12 @@ function drawPaused() {
 }
 
 function render() {
+  if (game.state === State.CITY) {
+    drawCityScreen();
+    drawSoundButton(CONFIG.colors.ink, CONFIG.colors.light);
+    if (game.paused) drawPaused();
+    return;
+  }
   const sky = drawSky();
 
   const s = view.dpr * view.scale;

@@ -26,6 +26,7 @@ Oyunun farkı: kayık oturan katın taşan kısmı **kesilip düşmez**. Kat old
   src/render.js    canvas ölçekleme, önbellekler, cepheler, arka plan, arayüz
   src/crane.js     vinç: sarkaç hareketi, bırakma, vinç çizimi
   src/tower.js     katlar, eğim, salınım, yerleşme, yıkılma, deprem
+  src/city.js      mahalle (Aşama 6): kayıt, kentsel dönüşüm, unvanlar, kozmetikler, mahalle ekranı
   src/main.js      oyun durumu, akış, giriş, oyun döngüsü
   manifest.webmanifest   PWA manifesti (Aşama 4)
   sw.js                  service worker, çevrimdışı önbellek (Aşama 4)
@@ -156,6 +157,14 @@ Aşama 5'te eklendi:
 - Mobil: AudioContext yalnızca "kullanıcı etkileşimi" sayılan olaylarda açılabilir/devam ettirilebilir: `pointerup`, `touchend`, `click`, `keydown` (dokunmatikte `pointerdown`/`touchstart` sayılmaz). İlk açılışta sessiz 1 örneklik buffer çalınır. iOS sessiz modu için `navigator.audioSession.type = 'playback'`, yoksa döngüdeki sessiz `<audio>` öğesi kullanılır. Sekme geri gelince context tekrar `resume()` edilir.
 - Ses telefonda test edildi ve çalışıyor (AudioContext "running"); geçici durum yazısı kaldırıldı.
 
+## 8c. Mahalle (Aşama 6)
+
+- Oyun bittiği anda (kule yıkılmadan önce) **en az 5 katlık** kule mahalleye bina olarak kaydedilir. Kayıt `localStorage`'da (`CONFIG.storage.city`, JSON, sürüm numaralı): kat başına bir harf (kiracı: s/f/t/e, kaçak kalmışsa büyük harf), puan, tarih, bitiş sebebi, görünüm tohumu. Bozuk ya da erişilemeyen veri boş mahalle sayılır.
+- **Kentsel dönüşüm:** 40 bina aşılınca **en kısa** bina yıkılır (eşitlikte en eski). **Rekor binası (en yüksek puan) ve en yüksek 3 bina asla yıkılmaz.** Yeni bina en kısaysa kendisi yıkılır.
+- **Unvanlar** toplam inşa edilen kata göre (yıkılanlar da sayılır): Gecekondu mahallesi (0) → Mahalle (60) → Semt (150) → İlçe (300) → Şehir (550) → Metropol (1000). Her unvan bir kozmetik ve bir mahalle simgesi açar (çay bahçesi, park, metro, cami, saat kulesi).
+- **Kozmetikler** (`CONFIG.cosmetics`): vinç rengi (Sarı, Kırmızı, Turkuaz, Mor) ve apartman kat paleti (Klasik, Pastel, Boğaz). Mahalle ekranındaki "Görünüm" butonundan seçilir, seçim `CONFIG.storage.look`'ta saklanır. İkaz şeritleri her zaman sarıdır (`colors.hazard`). **Oyun mekaniğine hiçbir etkisi yoktur.**
+- Mahalle ekranı: sağa sola kaydırılan sokak, binaya dokununca bilgi kartı (kat, puan, tarih, kiracılar, Rekor / Korunuyor etiketi), yeni bina yükselme animasyonu ve "Kentsel dönüşüm!" / "Yeni unvan" bildirimleri. Menüde "Mahallem", oyun sonunda "Mahalleye bak" butonu.
+
 ## 8b. PWA (Aşama 4)
 
 - `manifest.webmanifest`: ad "Apartman Kulesi", `display: standalone` (çentik/kamera deliği arayüzü örtmesin diye tam ekran değil), dikey yön, göreli yollar (`./`). Böylece site bir alt klasörde (ör. GitHub Pages) de çalışır.
@@ -166,7 +175,7 @@ Aşama 5'te eklendi:
 
 ## 9. Ekranlar ve akış
 
-Durum makinesi: `MENU → PLAYING → GAME_OVER → (yeniden) PLAYING`
+Durum makinesi: `MENU → PLAYING → GAME_OVER → (yeniden) PLAYING`; ayrıca `MENU ⇄ CITY` ve `GAME_OVER → CITY → MENU` (Aşama 6).
 
 - **Menü:** oyun adı "Apartman Kulesi", en yüksek puan, "Başlamak için dokun" yazısı. Arkada vinç boşta sallanır.
 - **Oyun:** üstte kat sayısı ve puan, köşede canlar (küçük kat ikonu ile), combo varsa "x3 Combo" yazısı.
@@ -206,6 +215,6 @@ Her aşama bitince bana kısa bir özet ver ve bir sonraki aşamaya geçmeden on
 Eski "sonraya bırakılan fikirler" listesi bu sırayla aşamalara dönüştürüldü. Her aşamada önce plan sunulur, onaydan sonra kodlanır.
 
 5. **Aşama 5 — Sakinler + İstanbul teması** *(yapıldı, bkz. 6 ve 7)*: katlara kiracılar taşınır; iyi oturan kat daha "kaliteli" kiracı çeker (pencerelerde ışık, balkonda çamaşır, kedi, çiçek kiracı tipine göre değişir). Arka plan İstanbul silueti (kubbeler, minareler, Galata benzeri kule, boğaz ve köprü; esinlenme, birebir kopya değil). Alt katlar gecekondu, yükseldikçe apartman, en üstte modern gökdelen. "Kaçak kat" mizahı.
-6. **Aşama 6 — Şehir meta oyunu:** her oyundaki bina bir mahalleye eklenir.
+6. **Aşama 6 — Şehir meta oyunu** *(yapıldı, bkz. 8c)*: her oyundaki bina bir mahalleye eklenir.
 7. **Aşama 7 — Paylaşılabilir yıkılma görüntüsü:** oyun sonunda kısa yıkılma tekrarı (TikTok / Reels için).
 8. **Aşama 8 — Günlük meydan okuma:** herkes aynı rüzgâr düzeniyle oynar, günlük liderlik tablosu.

@@ -15,9 +15,11 @@ const GY = REST_BOTTOM + CONFIG.layout.firstDropGap + CONFIG.foundation.height; 
 const PIVOT_X = W / 2;                    // tower pivot (world)
 const PIVOT_Y = CONFIG.foundation.height; // top-center of the foundation
 const GO_BUTTON = { x: 90, y: 404, w: 180, h: 52 };
+const GO_CITY_BUTTON = { x: 105, y: 466, w: 150, h: 40 };
+const MENU_CITY_BUTTON = { x: 115, y: 520, w: 130, h: 42 };
 const SOUND_BUTTON = { x: 322, y: 8, w: 30, h: 30 };
 
-const State = { MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER' };
+const State = { MENU: 'MENU', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER', CITY: 'CITY' };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const clamp01 = (v) => clamp(v, 0, 1);

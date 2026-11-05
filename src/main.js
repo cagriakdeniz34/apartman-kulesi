@@ -39,10 +39,11 @@ const game = {
   blockSeq: 0,
   tenantCounts: { student: 0, family: 0, teyze: 0, elite: 0 }, // per game (for the city meta, stage 6)
   over: { reason: '', timer: 0 },
+  cityEvent: null,   // what the last game did to the neighborhood
 };
 
-function startGame() {
-  game.state = State.PLAYING;
+// Clear the world (tower, effects, camera) for a new game or the menu
+function resetWorld() {
   game.tower = [];
   game.tilt = 0;
   game.sway = 0;
@@ -67,13 +68,30 @@ function startGame() {
   game.collapsing = null;
   game.cam.x = 0;
   game.cam.y = 0;
+  game.skyAlt = 0;
+}
+
+function startGame() {
+  resetWorld();
+  game.state = State.PLAYING;
   if (!game.crane.block) requestSpawn(0.15);
+}
+
+function backToMenu() {
+  resetWorld();
+  game.state = State.MENU;
+  if (!game.crane.block) {
+    game.crane.pending = false;
+    game.crane.block = makeBlock('normal');
+    game.crane.fadeT = 0;
+  }
 }
 
 function endGame(reason, delay) {
   game.state = State.GAME_OVER;
   game.over.reason = reason;
   game.over.timer = -delay; // overlay appears when timer reaches 0
+  recordBuilding();          // the tower is still standing here
   if (game.score > game.best) {
     game.best = game.score;
     game.newRecord = true;
@@ -169,6 +187,7 @@ function step(dt) {
   updateBackground(dt);
   updateCamera(dt);
   if (game.state === State.GAME_OVER) game.over.timer += dt;
+  if (game.state === State.CITY) updateCity(dt);
 }
 
 // =====================================================================
@@ -179,7 +198,8 @@ function handlePress(x, y, fromKey) {
   if (!fromKey && inRect(x, y, SOUND_BUTTON)) { Sound.toggleMute(); return; }
   switch (game.state) {
     case State.MENU:
-      startGame();
+      if (!fromKey && inRect(x, y, MENU_CITY_BUTTON)) enterCity(null);
+      else startGame();
       break;
     case State.PLAYING:
       tryDrop();
@@ -187,6 +207,11 @@ function handlePress(x, y, fromKey) {
     case State.GAME_OVER:
       if (game.over.timer < CONFIG.ui.gameOverInputDelay) return;
       if (fromKey || inRect(x, y, GO_BUTTON)) startGame();
+      else if (inRect(x, y, GO_CITY_BUTTON)) enterCity(game.cityEvent);
+      break;
+    case State.CITY:
+      if (fromKey) cityKey('Enter');
+      else cityPointerDown(x, y);
       break;
   }
 }
@@ -199,6 +224,24 @@ canvas.addEventListener('pointerdown', (e) => {
   handlePress(p.x, p.y, false);
 });
 
+// Neighborhood screen: drag to scroll, tap on release
+canvas.addEventListener('pointermove', (e) => {
+  if (game.state !== State.CITY) return;
+  const p = clientToLogical(e.clientX, e.clientY);
+  cityPointerMove(p.x);
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (game.state !== State.CITY) return;
+  const p = clientToLogical(e.clientX, e.clientY);
+  cityPointerUp(p.x, p.y, false);
+});
+canvas.addEventListener('pointercancel', () => { if (game.state === State.CITY) cityPointerUp(0, 0, true); });
+canvas.addEventListener('wheel', (e) => {
+  if (game.state !== State.CITY) return;
+  e.preventDefault();
+  cityWheel((e.deltaX || e.deltaY) * 0.6);
+}, { passive: false });
+
 // ...but audio can only be unlocked from user-activation events.
 // On touch screens that is pointerup/touchend, not pointerdown/touchstart.
 const unlockAudio = () => Sound.unlock();
@@ -206,7 +249,10 @@ const unlockAudio = () => Sound.unlock();
   window.addEventListener(type, unlockAudio, { capture: true, passive: true }));
 
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'Space' || e.code === 'Enter') {
+  if (game.state === State.CITY && !game.paused && ['Escape', 'Backspace', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+    e.preventDefault();
+    cityKey(e.code);
+  } else if (e.code === 'Space' || e.code === 'Enter') {
     e.preventDefault();
     if (e.repeat) return;
     handlePress(0, 0, true);
@@ -261,6 +307,9 @@ function frame(now) {
 
 window.addEventListener('resize', resize);
 resetQuake();
+City.load();
+loadLook();
+applyLook();
 resize();
 initClouds();
 game.crane.block = makeBlock('normal');
