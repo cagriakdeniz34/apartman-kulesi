@@ -144,7 +144,7 @@ Aşama 3'te eklendi:
 - Olaylar: katın oturması (tok "tak"), mükemmel (parlak "ding", combo arttıkça perdesi yükselir), ıskalama, kule yıkılması.
 - Ekranda ses aç/kapa butonu olsun. Tarayıcılar ilk dokunuştan önce sesi engellediği için ses ilk etkileşimde başlatılsın.
 - Mobil: AudioContext yalnızca "kullanıcı etkileşimi" sayılan olaylarda açılabilir/devam ettirilebilir: `pointerup`, `touchend`, `click`, `keydown` (dokunmatikte `pointerdown`/`touchstart` sayılmaz). İlk açılışta sessiz 1 örneklik buffer çalınır. iOS sessiz modu için `navigator.audioSession.type = 'playback'`, yoksa döngüdeki sessiz `<audio>` öğesi kullanılır. Sekme geri gelince context tekrar `resume()` edilir.
-- Geçici: ses butonunun yanında AudioContext durumu gösteriliyor (`CONFIG.audio.showDebugState`). Telefonda test edildikten sonra kaldırılacak.
+- Ses telefonda test edildi ve çalışıyor (AudioContext "running"); geçici durum yazısı kaldırıldı.
 
 ## 9. Ekranlar ve akış
 

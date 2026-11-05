@@ -708,14 +708,6 @@ function drawSoundButton(fg, outline) {
     ctx.arc(cx + 4, cy, 9, -0.9, 0.9);
   }
   ctx.stroke();
-
-  // temporary debug: AudioContext state
-  if (CONFIG.audio.showDebugState) {
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.font = font(10);
-    outlinedText(`${TEXT.soundState}: ${Sound.stateLabel()}`, b.x - 5, b.y + b.h / 2, fg, outline, 3);
-  }
 }
 
 function drawHUD(fg, outline) {

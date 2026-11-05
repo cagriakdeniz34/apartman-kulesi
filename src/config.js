@@ -161,7 +161,6 @@ const CONFIG = {
   birds: { minFloors: 15, minInterval: 5, maxInterval: 12, minFlock: 2, maxFlock: 4, minSpeed: 45, maxSpeed: 75 },
   audio: {
     volume: 0.6,
-    showDebugState: true,        // temporary: shows the AudioContext state next to the sound button
   },
   storage: { best: 'apartmanKulesi.best', muted: 'apartmanKulesi.muted' },
   ui: {
@@ -236,5 +235,4 @@ const TEXT = {
   playAgain: 'Tekrar Oyna',
   paused: 'Duraklatıldı',
   tapToResume: 'Devam etmek için dokun',
-  soundState: 'ses',
 };

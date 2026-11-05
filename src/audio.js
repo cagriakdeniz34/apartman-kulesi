@@ -109,9 +109,6 @@ const Sound = {
     Storage.set(CONFIG.storage.muted, this.muted ? '1' : '0');
     if (this.master) this.master.gain.setTargetAtTime(this.muted ? 0 : CONFIG.audio.volume, this.ctx.currentTime, 0.02);
   },
-  stateLabel() {
-    return this.ctx ? this.ctx.state : 'yok';
-  },
   ready() { return this.ctx && !this.muted && this.ctx.state === 'running'; },
 
   tone(f0, f1, dur, type, vol, delay) {
