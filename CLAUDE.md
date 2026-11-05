@@ -122,6 +122,11 @@ Aşama 3'te eklendi:
 - Farklı kat şekilleri (`CONFIG.shapes`): **dar kat** (6. kattan sonra rastgele, %76 genişlik, üstüne gelen katı tutturmak zorlaşır, +5), **balkonlu kat** (3. kattan sonra rastgele, iki yana taşan balkonlar, sadece görsel, +5), **çatı katı** (her 10. kat, kiremitli mansard çatı ve çatı pencereleri, üstü düz teras, +50).
 - Deprem (`CONFIG.quake`): 15. kattan sonra her yerleşmede %12 ihtimal, iki deprem arası en az 12 kat. Uyarıdan 0,8 sn sonra 4,5 sn sürer; ekran ve kule sarsılır, eğim dışa doğru itilir (mükemmel bırakmalar düzeltir). Kule yıkılmadan biterse +150.
 
+Aşama 5'te eklendi:
+- **Kiracılar** (`CONFIG.tenants`): kat yerleşince kiracı taşınır. Oturuşa göre: çok kayık (offset > kat genişliğinin %30'u) → öğrenci, diğer normal → aile, mükemmel → emekli teyze, mükemmel + combo ≥ 2 → seçkin kiracı. Perde, pencere süsü (kedi, bayrak, çiçek kutusu, lamba), balkon eşyası (çamaşır, sardunya, biber dizisi, kedi, pankart, büyük bitki) ve gece ışığı kiracıya göre seçilir. Kiracı **sadece kira puanı** verir (0 / 2 / 5 / 10), eğime etkisi yoktur. Vinçteki ve ıskalanan katlar boştur. Oyun başına kiracı sayıları `game.tenantCounts`'ta tutulur (Aşama 6 için).
+- **Kaçak kat** (`CONFIG.shapes.kacak`): 8. kattan sonra %8 ihtimal; sıvasız briket, filiz demiri, "SATILIK" tabelası, vinçte kırmızı "KAÇAK" etiketi. Eğim etkisi ×1,5, +40 puan. Depremle hiçbir bağlantısı yoktur; oyun sonu başlığı her zaman "Kule Yıkıldı!".
+- **Tapu** (`CONFIG.tapu`): her 25. katta kuledeki kaçak katlar sıvanıp boyanır, her biri +30 puan, "Tapu çıktı!" yazısı. Kulede kaçak kat yoksa yazı çıkmaz.
+
 ## 7. Görsel stil
 
 - **Düz renkli, minimal, temiz** çizim. Görsel dosya yok, her şey kodla çiziliyor.
@@ -133,7 +138,8 @@ Aşama 3'te eklendi:
   - Vinç: `#F2B705` (sarı) ve koyu gri
 - Kat yüksekliği `CONFIG.block.height` tek değerinden gelir (şu an 62; ilk hâlinden ~%40 yüksek). Cephe düzeni buna oranla ölçeklenir.
 - Kat detayları (Aşama 2'de eklendi): çerçeveli pencereler, rastgele perde / yanan ışık, bazı katlarda balkon + korkuluk, balkonda ara sıra saksı ya da asılı çamaşır, katın altında ince kat silmesi. Detaylar kat oluşturulurken bir kez seçilir, her karede değişmez.
-- Arka plan: 2–3 katmanlı şehir silueti (uzaktaki daha soluk, parallax ile yavaş kayar), süzülen bulutlar, yüksekte ara sıra kuşlar. Gökyüzü kat sayısına göre gündüz → gün batımı → gece (yıldızlı) geçer.
+- Arka plan: 3 katmanlı **İstanbul silueti** (Aşama 5; esinlenme, birebir kopya değil): uzakta boğaz suyu, karşı kıyı tepeleri ve asma köprü; ortada kaskad kubbeli camiler, ince minareler, konik külahlı yuvarlak kule; önde bacalı, antenli, çanaklı sık apartmanlar. Parallax ile yavaş kayar. Süzülen bulutlar, yüksekte ara sıra martılar.
+- Kat dönemleri (`CONFIG.eras`, Aşama 5): 1–9. kat **gecekondu** (yamalı sıva, soluk renkler, ahşap pencereler, sac saçak, soba borusu, çanak anten, sac çatı; en üst gecekondu katında filiz demiri), 10–29 **apartman** (klasik cephe, klima, çanak anten), 30+ **gökdelen** (cam giydirme cephe, cam korkuluk, çatı katı yerine teknik kat + ikaz ışıkları). Sınırlarda 2'şer katlık karışık geçiş bandı. Gökyüzü kat sayısına göre gündüz → gün batımı → gece (yıldızlı) geçer.
 - Vinç: gergi halatı olmayan düz tepeli (flat-top) kule vinci. Solda kafes kule gövdesi (ekranın altına kadar, kulenin arkasında), çapraz bağlı kafes kol, kol üstünde içinde operatör silüeti olan kabin, arka uçta karşı ağırlık, kol ucunda kırmızı ikaz ışığı (gece yanıp söner), iki makaralı kanca bloğu (kanca sallanırken hafifçe döner), sarı-siyah ikaz şeritleri. Metal parçalarda bir taraf açık, bir taraf koyu. Puan alanının üstünden halat/çizgi geçmez.
 - Performans: kat görüntüleri, siluet katmanları, bulutlar, yıldızlar ve vincin sabit kısmı önceden çizilip önbelleğe alınır.
 - Zeminde temel ve birkaç sade şehir silueti.
@@ -194,10 +200,11 @@ Her aşama bitince bana kısa bir özet ver ve bir sonraki aşamaya geçmeden on
 - [ ] Oyun sonu ekranında skor ve "Tekrar Oyna" var
 - [ ] Tüm ayar değerleri `CONFIG` içinde
 
-## 13. Sonraya bırakılan fikirler (şimdilik yapma)
+## 13. Sonraki aşamalar (5–8)
 
-- Katlara sakinlerin taşınması: pencerelerde ışık, balkonda çamaşır, kediler; iyi oturan kule daha "kaliteli" kiracı çeker
-- Şehir meta oyunu: her oyundaki bina bir mahalleye eklenir
-- İstanbul teması: gecekondudan gökdelene, "kaçak kat" mizahı
-- Günlük meydan okuma: herkes aynı rüzgâr düzeniyle oynar, günlük liderlik tablosu
-- Oyun sonunda paylaşılabilir kısa yıkılma tekrarı (TikTok / Reels için)
+Eski "sonraya bırakılan fikirler" listesi bu sırayla aşamalara dönüştürüldü. Her aşamada önce plan sunulur, onaydan sonra kodlanır.
+
+5. **Aşama 5 — Sakinler + İstanbul teması** *(yapıldı, bkz. 6 ve 7)*: katlara kiracılar taşınır; iyi oturan kat daha "kaliteli" kiracı çeker (pencerelerde ışık, balkonda çamaşır, kedi, çiçek kiracı tipine göre değişir). Arka plan İstanbul silueti (kubbeler, minareler, Galata benzeri kule, boğaz ve köprü; esinlenme, birebir kopya değil). Alt katlar gecekondu, yükseldikçe apartman, en üstte modern gökdelen. "Kaçak kat" mizahı.
+6. **Aşama 6 — Şehir meta oyunu:** her oyundaki bina bir mahalleye eklenir.
+7. **Aşama 7 — Paylaşılabilir yıkılma görüntüsü:** oyun sonunda kısa yıkılma tekrarı (TikTok / Reels için).
+8. **Aşama 8 — Günlük meydan okuma:** herkes aynı rüzgâr düzeniyle oynar, günlük liderlik tablosu.

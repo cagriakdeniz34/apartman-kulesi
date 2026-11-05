@@ -63,6 +63,8 @@ const CONFIG = {
   shapes: {
     narrow: { chance: 0.14, minFloors: 6, widthRatio: 0.76, windowCols: [-16, 16], bonus: 5 },
     balcony: { chance: 0.18, minFloors: 3, depth: 13, bonus: 5 },
+    // Kaçak kat (stage 5): unplastered illegal floor, heavier -> more tilt
+    kacak: { chance: 0.08, minFloors: 8, tiltMul: 1.5, bonus: 40, rebarCols: [-38, -14, 14, 38], rebarHeight: 9 },
     roof: {
       every: 10,                 // every 10th floor is a mansard roof floor
       bonus: 50,
@@ -70,6 +72,41 @@ const CONFIG = {
       windowHeightRatio: 0.24,
       eaveRatio: 0.5,
       dormerCols: [-24, 24],
+    },
+  },
+  // Tapu (stage 5): every 25th floor, kaçak floors get plastered + painted
+  tapu: { every: 25, bonusPerFloor: 30 },
+  // Facade era by floor number (stage 5). Near a boundary the two styles mix
+  // over `blend` floors on each side.
+  eras: {
+    list: [
+      { from: 1, id: 'gecekondu' },
+      { from: 10, id: 'apartman' },
+      { from: 30, id: 'gokdelen' },
+    ],
+    blend: 2,
+    gecekondu: {
+      windowCols: [-25, 25],
+      narrowWindowCols: [-16, 16],
+      patchCount: 3,               // plaster patches
+      stovePipeChance: 0.55,
+      dishChance: 0.3,
+      balconyChance: 0.2,
+      rebarCols: [-30, 0, 30],     // rebars on the topmost gecekondu floor
+    },
+    apartman: { acChance: 0.35, dishChance: 0.18 },
+    gokdelen: { mullionStep: 20, spandrelRatio: 0.5, balconyChance: 0.3 },
+  },
+  // Tenants move in when a floor lands; better landings attract better tenants.
+  // Rent is a small score bonus only (no effect on tilt).
+  tenants: {
+    studentOffsetRatio: 0.3,     // |offset| / block width above this -> student
+    eliteCombo: 2,               // perfect with combo >= this -> elite
+    types: {
+      student: { rent: 0, nightLit: 0.9, decoChance: 0.25, itemChance: 0.8 },
+      family: { rent: 2, nightLit: 0.55, decoChance: 0.1, itemChance: 0.7 },
+      teyze: { rent: 5, nightLit: 0.35, decoChance: 0.4, itemChance: 0.95 },
+      elite: { rent: 10, nightLit: 0.7, decoChance: 0.35, itemChance: 0.9 },
     },
   },
   foundation: { width: 140, height: 24 },
@@ -146,15 +183,17 @@ const CONFIG = {
     starsFull: 60,
     starCount: 80,
   },
+  // Istanbul-inspired skyline (stage 5), far -> near. Colors: day, sunset, night.
   skyline: {
     tileWidth: 360,
-    layers: [ // far -> near
-      { seed: 11, minW: 20, maxW: 40, minH: 90, maxH: 210, gap: 4, parallaxX: 0.1, parallaxY: 0.08, lights: 0.12,
-        colors: ['#D3E5EE', '#E7BFA6', '#2A3762'] },
-      { seed: 7, minW: 24, maxW: 44, minH: 60, maxH: 150, gap: 6, parallaxX: 0.2, parallaxY: 0.15, lights: 0.22,
-        colors: ['#B5D1DF', '#CC9C8F', '#1F294D'] },
-      { seed: 3, minW: 26, maxW: 50, minH: 34, maxH: 100, gap: 8, parallaxX: 0.35, parallaxY: 0.25, lights: 0.3,
-        colors: ['#98BDD0', '#AA7F83', '#161D3A'] },
+    layers: [
+      { kind: 'bosphorus', seed: 11, height: 150, parallaxX: 0.1, parallaxY: 0.08, lights: 0.1,
+        colors: ['#C9DDE8', '#E2B9A4', '#27335C'], water: ['#A9CFE0', '#E3A98F', '#1A2549'] },
+      { kind: 'historic', seed: 7, height: 170, parallaxX: 0.2, parallaxY: 0.15, lights: 0.2,
+        colors: ['#AECADA', '#C9988C', '#1E284B'] },
+      { kind: 'apartments', seed: 3, height: 104, minW: 22, maxW: 46, minH: 30, maxH: 92, gap: 5,
+        parallaxX: 0.35, parallaxY: 0.25, lights: 0.3,
+        colors: ['#93B8CC', '#A87C80', '#151C38'] },
     ],
   },
   clouds: { count: 7, minSpeed: 5, maxSpeed: 14, parallaxX: 0.3, parallaxY: 0.35, nightAlpha: 0.25 },
@@ -169,6 +208,28 @@ const CONFIG = {
   },
   colors: {
     blocks: ['#E07A5F', '#F2CC8F', '#81B29A', '#3D85C6', '#F4A261'],
+    gecekondu: ['#D8C7A3', '#C9B6D3', '#A8C6B4', '#E2B3A0', '#B7CAD8'],
+    gokdelen: ['#5FA8C8', '#4E8DAE', '#6CB5B1', '#7D9BC2'],
+    briket: '#A9A59C',
+    briketLine: '#8C887F',
+    rebar: '#7A4E36',
+    wood: '#8B5E3C',
+    tin: '#9DA3AB',
+    tinDark: '#727881',
+    mullion: '#DDE7EE',
+    mullionNight: '#56627A',
+    glassPanelNight: '#24304D',
+    sheet: '#F1EDE4',
+    lace: 'rgba(255, 255, 255, 0.78)',
+    drape: '#7A3B52',
+    flag: ['#D7263D', '#F2C200', '#1F6FB5'],
+    geranium: '#E5383B',
+    pepper: '#C1121F',
+    cat: ['#2B2D42', '#E08E45', '#8D8D8D', '#F4EEE0'],
+    lamp: '#FFE7A8',
+    acUnit: '#E9ECEF',
+    signRed: '#C8102E',
+    seagull: '#FFFFFF',
     ink: '#2B2D42',
     light: '#FFF8E7',
     nightText: '#F4F1E8',
@@ -230,6 +291,11 @@ const TEXT = {
   roof: 'Çatı katı!',
   quake: 'DEPREM!',
   quakeSurvived: 'Depreme dayandı!',
+  kacak: 'Kaçak kat!',
+  kacakTag: 'KAÇAK',
+  forSale: 'SATILIK',
+  tapu: 'Tapu çıktı!',
+  rent: 'kira',
   overCollapse: 'Kule Yıkıldı!',
   overLives: 'Canlar Bitti!',
   playAgain: 'Tekrar Oyna',

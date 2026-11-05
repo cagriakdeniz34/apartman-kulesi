@@ -428,5 +428,31 @@ function drawCrane() {
   drawWindFlag();
   const p = hangingPose();
   drawHookGear(p);
-  if (game.crane.block) drawBlockAt(game.crane.block, p.cx, p.cy, p.rot, game.crane.fadeT);
+  const blk = game.crane.block;
+  if (blk) {
+    drawBlockAt(blk, p.cx, p.cy, p.rot, game.crane.fadeT);
+    if (blk.type === 'kacak') drawKacakTag(p, game.crane.fadeT);
+  }
+}
+
+// Red paper tag tied to the corner of a hanging kaçak floor
+function drawKacakTag(p, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(p.cx, p.cy);
+  ctx.rotate(p.rot);
+  ctx.translate(BW / 2 - 14, -BH / 2 - 2);
+  ctx.rotate(0.12);
+  roundRectPath(ctx, -17, -6, 34, 12, 3);
+  ctx.fillStyle = CONFIG.colors.signRed;
+  ctx.fill();
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = CONFIG.colors.ink;
+  ctx.stroke();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 8px ${CONFIG.ui.font}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(TEXT.kacakTag, 0, 0.5);
+  ctx.restore();
 }

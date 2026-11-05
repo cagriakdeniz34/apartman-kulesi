@@ -19,83 +19,157 @@ function difficultyAt(floors) {
 }
 
 // ---------------------------------------------------------------------
-// Blocks: shape + details are rolled once at creation
+// Blocks: shape + structure are rolled at creation; tenants (curtains,
+// balcony items, lights) move in when the block lands (see furnishBlock).
 // ---------------------------------------------------------------------
 function chooseBlockType() {
   const S = CONFIG.shapes;
   const n = game.floors + 1; // floor number this block would become
   if (n % S.roof.every === 0) return 'roof';
+  if (n >= S.kacak.minFloors && Math.random() < S.kacak.chance) return 'kacak';
   const r = Math.random();
   if (n >= S.narrow.minFloors && r < S.narrow.chance) return 'narrow';
   if (n >= S.balcony.minFloors && r < S.narrow.chance + S.balcony.chance) return 'balcony';
   return 'normal';
 }
 
-function rollWindow() {
-  const b = CONFIG.block;
-  const x = Math.random();
-  const type = x < b.curtainChance ? 'curtain' : x < b.curtainChance + b.litChance ? 'lit' : 'glass';
-  return {
-    type,
-    curtain: pick(CONFIG.colors.curtains),
-    nightLit: type === 'lit' || Math.random() < b.nightLitChance,
-  };
+// Facade era for floor n; styles mix over a few floors around each boundary
+function chooseEra(n) {
+  const E = CONFIG.eras;
+  let era = E.list[0].id;
+  for (let i = 1; i < E.list.length; i++) {
+    const from = E.list[i].from;
+    const p = clamp01((n - (from - E.blend) + 0.5) / (2 * E.blend));
+    if (Math.random() < p) era = E.list[i].id;
+  }
+  return era;
 }
 
-function rollItem() {
-  const r = Math.random();
-  return r < 0.35 ? 'plant' : r < 0.6 ? 'laundry' : null;
+// An empty window, before anyone moves in
+function emptyWindow() {
+  return { curtain: 'none', curtainColor: '', deco: null, decoColor: '', dayLit: false, nightLit: false };
 }
 
-function rollClothes() {
+function rollClothes(min, max) {
   const clothes = [];
-  const n = 2 + Math.floor(Math.random() * 3);
+  const n = min + Math.floor(Math.random() * (max - min + 1));
   for (let i = 0; i < n; i++) clothes.push({ color: pick(CONFIG.colors.laundry), w: rand(4, 7), h: rand(5, 8) });
   return clothes;
 }
 
 function makeBlock(type) {
   type = type || 'normal';
-  const b = CONFIG.block, S = CONFIG.shapes;
-  const pal = CONFIG.colors.blocks;
+  const b = CONFIG.block, S = CONFIG.shapes, E = CONFIG.eras;
+  const n = game.floors + 1;
+  const era = type === 'kacak' ? 'kacak' : chooseEra(n);
+  const pal = era === 'gecekondu' ? CONFIG.colors.gecekondu
+    : era === 'gokdelen' ? CONFIG.colors.gokdelen : CONFIG.colors.blocks;
+  const seq = game.blockSeq++;
+  let cols = type === 'narrow' ? S.narrow.windowCols : b.windowCols;
+  if (era === 'gecekondu') cols = type === 'narrow' ? E.gecekondu.narrowWindowCols : E.gecekondu.windowCols;
   const blk = {
     type,
-    color: pal[(game.blockSeq++) % pal.length],
+    era,                // 'gecekondu' | 'apartman' | 'gokdelen' | 'kacak'
+    legal: false,       // kaçak floors become legal at the next tapu
+    tenant: null,
+    color: pal[seq % pal.length],
+    paint: CONFIG.colors.blocks[seq % CONFIG.colors.blocks.length], // kaçak after tapu
     width: type === 'narrow' ? Math.round(BW * S.narrow.widthRatio) : BW,
-    cols: type === 'narrow' ? S.narrow.windowCols : b.windowCols,
+    cols,
     rows: type === 'roof' ? S.roof.windowRowsRatio : b.windowRowsRatio,
     windows: [],
     dormers: [],
     balcony: null,      // small front balcony
     sides: null,        // side balconies (balcony floor)
+    patches: [],        // gecekondu plaster patches
+    pipe: 0,            // gecekondu stove pipe side (-1 / 1)
+    dish: null,         // satellite dish position (fractions of width / height)
+    ac: 0,              // apartman AC unit side (-1 / 1)
+    catColor: '',
     cx: 0,
     index: -1,
     cache: null,
     cacheKey: '',
     flash: 0,
   };
-  for (let i = 0; i < blk.rows.length * blk.cols.length; i++) blk.windows.push(rollWindow());
+  for (let i = 0; i < blk.rows.length * blk.cols.length; i++) blk.windows.push(emptyWindow());
+  if (type === 'roof') for (let i = 0; i < S.roof.dormerCols.length; i++) blk.dormers.push(emptyWindow());
 
-  if (type === 'roof') {
-    for (let i = 0; i < S.roof.dormerCols.length; i++) blk.dormers.push(rollWindow());
-  } else if (type === 'balcony') {
-    blk.sides = {
-      left: { item: rollItem(), clothes: rollClothes() },
-      right: { item: rollItem(), clothes: rollClothes() },
-    };
-  } else if (Math.random() < b.balconyChance) {
-    const span = blk.cols.length >= 2 && Math.random() < 0.5 ? 2 : 1;
-    const start = Math.floor(Math.random() * (blk.cols.length - span + 1));
-    let item = null;
-    if (Math.random() < b.balconyItemChance) item = span === 2 && Math.random() < 0.55 ? 'laundry' : 'plant';
-    blk.balcony = { start, span, item, plantPos: Math.random(), clothes: rollClothes() };
+  if (era === 'gecekondu') {
+    const G = E.gecekondu;
+    for (let i = 0; i < G.patchCount; i++) {
+      blk.patches.push({ x: rand(-0.48, 0.3), y: rand(0.05, 0.7), w: rand(0.1, 0.2), h: rand(0.12, 0.25), light: Math.random() < 0.5 });
+    }
+    if (type !== 'roof' && type !== 'balcony' && Math.random() < G.stovePipeChance) blk.pipe = Math.random() < 0.5 ? -1 : 1;
+    if (type !== 'roof' && type !== 'narrow' && Math.random() < G.dishChance) blk.dish = { x: (blk.pipe ? -blk.pipe : Math.random() < 0.5 ? -1 : 1) * 0.42, y: 0.22 };
+  } else if (era === 'apartman' && type !== 'roof') {
+    const A = E.apartman;
+    if (type !== 'narrow' && type !== 'balcony' && Math.random() < A.acChance) blk.ac = Math.random() < 0.5 ? -1 : 1;
+    if (type !== 'narrow' && Math.random() < A.dishChance) blk.dish = { x: (blk.ac ? -blk.ac : Math.random() < 0.5 ? -1 : 1) * 0.43, y: 0.36 };
+  }
+
+  if (type === 'balcony') {
+    blk.sides = { left: { item: null, clothes: rollClothes(2, 4) }, right: { item: null, clothes: rollClothes(2, 4) } };
+  } else if (type !== 'roof' && type !== 'kacak') {
+    const chance = era === 'gecekondu' ? E.gecekondu.balconyChance
+      : era === 'gokdelen' ? E.gokdelen.balconyChance : b.balconyChance;
+    if (Math.random() < chance) {
+      const span = blk.cols.length >= 2 && Math.random() < 0.5 ? 2 : 1;
+      const start = Math.floor(Math.random() * (blk.cols.length - span + 1));
+      blk.balcony = { start, span, item: null, itemPos: Math.random(), clothes: rollClothes(2, 4) };
+      if (start === 0 || start + span === blk.cols.length) blk.ac = 0; // no room for the AC unit
+    }
   }
   return blk;
+}
+
+// Which tenant a landing attracts (game.combo already counts this landing)
+function tenantFor(offset, perfect) {
+  const T = CONFIG.tenants;
+  if (perfect) return game.combo >= T.eliteCombo ? 'elite' : 'teyze';
+  return Math.abs(offset) / BW > T.studentOffsetRatio ? 'student' : 'family';
+}
+
+const TENANT_STYLE = {
+  student: { curtains: ['none', 'none', 'sheet'], decos: ['flag', 'flag', 'cat'], items: ['laundry', 'laundry', 'banner'] },
+  family: { curtains: ['plain', 'plain', 'none'], decos: ['cat', 'flowers'], items: ['laundry', 'plant', 'laundry'] },
+  teyze: { curtains: ['lace', 'lace', 'lace', 'plain'], decos: ['flowers', 'flowers', 'cat'], items: ['geranium', 'peppers', 'cat', 'geranium'] },
+  elite: { curtains: ['drape', 'drape', 'none'], decos: ['lamp', 'lamp', 'cat'], items: ['bigplant', 'bigplant', 'cat'] },
+};
+
+function furnishWindow(wd, tenant) {
+  const t = CONFIG.tenants.types[tenant], st = TENANT_STYLE[tenant], col = CONFIG.colors;
+  wd.curtain = pick(st.curtains);
+  wd.curtainColor = wd.curtain === 'drape' ? col.drape : pick(col.curtains);
+  wd.deco = Math.random() < t.decoChance ? pick(st.decos) : null;
+  wd.decoColor = wd.deco === 'cat' ? pick(col.cat) : pick(col.flag);
+  wd.nightLit = Math.random() < t.nightLit;
+  wd.dayLit = wd.deco === 'lamp' || (tenant === 'student' && Math.random() < 0.2);
+}
+
+function furnishBlock(blk, tenant) {
+  const t = CONFIG.tenants.types[tenant], st = TENANT_STYLE[tenant];
+  blk.tenant = tenant;
+  blk.catColor = pick(CONFIG.colors.cat);
+  for (const wd of blk.windows) furnishWindow(wd, tenant);
+  for (const wd of blk.dormers) furnishWindow(wd, tenant);
+  const item = () => (Math.random() < t.itemChance ? pick(st.items) : null);
+  if (blk.balcony) {
+    blk.balcony.item = item();
+    if (blk.balcony.item === 'laundry' && tenant === 'student') blk.balcony.clothes = rollClothes(4, 6);
+  }
+  if (blk.sides) {
+    blk.sides.left.item = item();
+    blk.sides.right.item = item();
+  }
+  blk.cache = null;
 }
 
 // Half of the drawn width (side balconies / roof eaves stick out)
 function blockVisualHalf(blk) {
   if (blk.type === 'balcony') return blk.width / 2 + CONFIG.shapes.balcony.depth;
+  if (blk.pipe) return blk.width / 2 + 8;
+  if (blk.era === 'gecekondu') return blk.width / 2 + 4;
   if (blk.type === 'roof') return blk.width / 2 + 3;
   return blk.width / 2;
 }
@@ -189,12 +263,20 @@ function resolveLanding(f, surfaceY, top) {
   } else {
     game.score += CONFIG.score.normal;
     game.combo = 0;
-    game.tilt += (offset / BW) * t.tiltFactorDeg * DEG;
+    const heavy = f.block.type === 'kacak' ? CONFIG.shapes.kacak.tiltMul : 1;
+    game.tilt += (offset / BW) * t.tiltFactorDeg * DEG * heavy;
   }
 
   const blk = f.block;
   const shapeBonus = CONFIG.shapes[blk.type] ? CONFIG.shapes[blk.type].bonus : 0;
   game.score += shapeBonus;
+
+  // tenants move in; rent is a small score bonus (no effect on tilt)
+  const tenant = tenantFor(offset, perfect);
+  furnishBlock(blk, tenant);
+  const rent = CONFIG.tenants.types[tenant].rent;
+  game.score += rent;
+  game.tenantCounts[tenant] += 1;
 
   blk.cx = top.lx + offset;
   blk.index = game.tower.length;
@@ -215,10 +297,14 @@ function resolveLanding(f, surfaceY, top) {
     spawnDust(base.x, base.y, blk.width);
     Sound.land();
   }
+  if (rent > 0) addPopup(`+${rent} ${TEXT.rent}`, nt.x + 60, nt.y - 8, { size: 14 });
   if (blk.type === 'roof') {
     addPopup(`${TEXT.roof} +${shapeBonus}`, nt.x, nt.y + 50);
     Sound.bonus();
+  } else if (blk.type === 'kacak') {
+    addPopup(`${TEXT.kacak} +${shapeBonus}`, nt.x, nt.y + 50);
   }
+  if (game.floors % CONFIG.tapu.every === 0) grantTapu();
 
   if (Math.abs(game.tilt) > t.maxTiltDeg * DEG) {
     startCollapse();
@@ -226,6 +312,23 @@ function resolveLanding(f, surfaceY, top) {
     requestSpawn(CONFIG.crane.spawnDelay);
     maybeScheduleQuake();
   }
+}
+
+// Tapu: every kaçak floor in the tower is legalized (plastered + painted)
+function grantTapu() {
+  let count = 0;
+  for (const b of game.tower) {
+    if (b.type === 'kacak' && !b.legal) {
+      b.legal = true;
+      b.cache = null;
+      count++;
+    }
+  }
+  if (!count) return;
+  const bonus = count * CONFIG.tapu.bonusPerFloor;
+  game.score += bonus;
+  addPopup(`${TEXT.tapu} +${bonus}`, 0, 0, { screen: true, y: 250, size: 24, duration: 1.6 });
+  Sound.bonus();
 }
 
 function onFloorsChanged() {

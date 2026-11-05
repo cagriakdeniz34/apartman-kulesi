@@ -37,6 +37,7 @@ const game = {
   collapsing: null,
   crane: { block: null, fadeT: 1, pending: false, spawnTimer: 0, ropeLen: CONFIG.crane.ropeLength, hookTwist: 0 },
   blockSeq: 0,
+  tenantCounts: { student: 0, family: 0, teyze: 0, elite: 0 }, // per game (for the city meta, stage 6)
   over: { reason: '', timer: 0 },
 };
 
@@ -52,6 +53,7 @@ function startGame() {
   game.combo = 0;
   game.floors = 0;
   game.newRecord = false;
+  game.tenantCounts = { student: 0, family: 0, teyze: 0, elite: 0 };
   game.diff = difficultyAt(0);
   game.nightOn = false;
   game.swing.windTarget = 0;

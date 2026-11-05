@@ -1,7 +1,7 @@
 // Service worker: precaches the whole game so it runs offline after the first visit.
 // IMPORTANT: bump CACHE_VERSION whenever any file below changes, otherwise
 // installed players keep getting the old cached copy.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `apartman-kulesi-${CACHE_VERSION}`;
 
 const ASSETS = [
