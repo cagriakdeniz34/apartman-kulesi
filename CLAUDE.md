@@ -37,6 +37,7 @@ Oyunun farkı: kayık oturan katın taşan kısmı **kesilip düşmez**. Kat old
 - Oyun döngüsü `requestAnimationFrame` ile, zaman adımı `deltaTime` tabanlı olsun. Fizik kare hızından bağımsız çalışmalı (60 Hz ve 120 Hz ekranlarda aynı his).
 - Canvas cihaz piksel oranına (`devicePixelRatio`) göre ölçeklensin, bulanık görünmesin.
 - Kod yorumları ve değişken adları İngilizce, arayüz metinleri Türkçe.
+- **Commit mesajlarına `Co-Authored-By` satırı ekleme** (PR açıklamalarına da imza/atıf satırı ekleme). Proje ayarı `.claude/settings.json` içinde `attribution` boş bırakılarak kapatıldı.
 
 ## 3. Ekran ve kontrol
 
